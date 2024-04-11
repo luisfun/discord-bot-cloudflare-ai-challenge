@@ -21,8 +21,9 @@ export class MDTranslator {
 	}
 
 	async run(model: TranslationModels, inputs: TranslationInputs, headers?: HeadersInit | CacheHeaders) {
-		const { text, source_lang, target_lang } = inputs
-		const codeBlockArray = text.split('```')
+		const { source_lang, target_lang } = inputs
+		const trans = (text: string) => this.trans(model, { text, source_lang, target_lang }, headers)
+		const codeBlockArray = inputs.text.split('```')
 		const tCodeBlockArray = await Promise.all(
 			codeBlockArray.map(async (codeBlock, i) => {
 				// this is code block
@@ -32,17 +33,12 @@ export class MDTranslator {
 				const tParagraphArray = await Promise.all(
 					paragraphArray.map(async paragraph => {
 						// List
-						if (paragraph.startsWith('- '))
-							return '- ' + (await this.trans(model, { text: paragraph.slice(2), source_lang, target_lang }, headers))
+						if (paragraph.startsWith('- ')) return '- ' + (await trans(paragraph.slice(2)))
 						// Number List
 						const numStr = numberList(paragraph)
-						if (numStr)
-							return (
-								numStr +
-								(await this.trans(model, { text: paragraph.slice(numStr.length), source_lang, target_lang }, headers))
-							)
+						if (numStr) return numStr + (await trans(paragraph.slice(numStr.length)))
 						// Normal Paragraph
-						return this.trans(model, { text: paragraph, source_lang, target_lang }, headers)
+						return trans(paragraph)
 					}),
 				)
 				return tParagraphArray.join('\n')
