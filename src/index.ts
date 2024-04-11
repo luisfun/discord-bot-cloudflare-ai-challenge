@@ -1,6 +1,6 @@
 import type { CommandContext } from 'discord-hono'
 import { modelMappings } from '@cloudflare/ai'
-import { DiscordHono, Components, LinkButton, Button } from 'discord-hono'
+import { DiscordHono, Components, Button } from 'discord-hono'
 import { Gateway } from '@luisfun/workers-ai-gateway'
 import { MDTranslator } from './md-translator'
 type ModelMappings = typeof modelMappings
