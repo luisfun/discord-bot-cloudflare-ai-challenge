@@ -35,7 +35,6 @@ const commands = [
 	new Command('code', 'Program Code Hints').options(...options('Ask AI', 'deepseek-coder-6.7b-instruct-awq', codeC)),
 	new Command('math', 'Math Resolution').options(...options('Ask AI', 'deepseek-math-7b-instruct', mathC)),
 	new Command('image', 'Text to Image').options(...options('Image Elements', 'Default dreamshaper-8-lcm', imageC)),
-	new Command('info', 'Bot Information'),
 ]
 
 await register(

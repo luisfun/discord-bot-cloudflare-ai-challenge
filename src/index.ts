@@ -8,6 +8,13 @@ type ModelMappings = typeof modelMappings
 type TextModels = ModelMappings['text-generation']['models'][number]
 type ImageModels = ModelMappings['text-to-image']['models'][number]
 
+type Env = {
+	Bindings: {
+		Endpoint: string
+		Token: string
+	}
+}
+
 // prettier-ignore
 const defaultModel = (type: 'text' | 'code' | 'math' | 'image') =>
 	type === 'text' ? '@cf/mistral/mistral-7b-instruct-v0.1' :
@@ -15,12 +22,7 @@ const defaultModel = (type: 'text' | 'code' | 'math' | 'image') =>
 	type === 'math' ? '@cf/deepseek-ai/deepseek-math-7b-instruct' :
 	'@cf/lykon/dreamshaper-8-lcm'
 
-type Env = {
-	Bindings: {
-		Endpoint: string
-		Token: string
-	}
-}
+const components = new Components().row(new Button('delete-self', 'Delete', 'Secondary').emoji({ name: '🗑️' }))
 
 const cfai = async (c: CommandContext<Env>, type: 'text' | 'code' | 'math' | 'image') => {
 	const locale = c.interaction.locale.split('-')[0]
@@ -45,10 +47,10 @@ const cfai = async (c: CommandContext<Env>, type: 'text' | 'code' | 'math' | 'im
 				blobs = await Promise.all([0, 1, 2].map(async () => new Blob([await t2i(ai, model as ImageModels, enPrompt)])))
 				break
 		}
-		if (!blobs[0]) await c.followup(content)
+		if (!blobs[0]) await c.followup({ content, components })
 		else
 			await c.followup(
-				{ content },
+				{ content, components },
 				blobs.map(blob => ({ blob, name: 'image.png' })),
 			)
 	} else await c.followup(content + '\n\n⚠️Error: Prompt Translation')
@@ -71,15 +73,6 @@ const app = new DiscordHono<Env>()
 	.command('code', c => c.resDefer(cfai, 'code'))
 	.command('math', c => c.resDefer(cfai, 'math'))
 	.command('image', c => c.resDefer(cfai, 'image'))
-	.command('info', c =>
-		c.res({
-			content: 'text: ' + c.values.text,
-			components: new Components().row(
-				new LinkButton('https://discord-hono.luis.fun', 'Docs'),
-				new Button('delete-self', 'Delete', 'Secondary').emoji({ name: '🗑️' }),
-			),
-		}),
-	)
 	.component('delete-self', c => c.resRepost())
 
 export default app
