@@ -1,7 +1,7 @@
 import type { CommandContext } from 'discord-hono'
 import { DiscordHono, Components, Button } from 'discord-hono'
 import type { ModelMappings } from '@luisfun/cloudflare-ai-plugin'
-//import type { Ai } from '@cloudflare/ai'
+//import type { Ai as Cfai } from '@cloudflare/ai'
 import { Ai } from '@luisfun/cloudflare-ai-plugin'
 
 type TextModels = ModelMappings['text-generation']['models'][number]
@@ -11,7 +11,7 @@ type Env = {
   Bindings: {
     Endpoint: string
     Token: string
-    //AI: Ai
+    //AI: Cfai
   }
 }
 
@@ -32,7 +32,7 @@ const cfai = async (c: CommandContext<Env>, type: 'text' | 'code' | 'math' | 'im
   let content = '```' + prompt + '```\n'
   let blobs: Blob[] = []
 
-  //const ai = c.env.AI
+  //const ai = new Ai(c.env.AI)
   const ai = new Ai(c.env.Endpoint, c.env.Token)
   const enPrompt = translation ? await m2m(ai, prompt, locale, 'en') : prompt
   if (enPrompt) {
@@ -60,7 +60,6 @@ const t2t = async (ai: Ai, model: TextModels, prompt: string) =>
   ((await ai.run(model, { prompt })) as { response: string }).response
 const m2m = async (ai: Ai, text: string, source_lang: string, target_lang: string) =>
   (await ai.mdt('@cf/meta/m2m100-1.2b', { text, source_lang, target_lang })).translated_text
-//  (await ai.run('@cf/meta/m2m100-1.2b', { text, source_lang, target_lang })).translated_text
 const t2i = async (ai: Ai, model: ImageModels, prompt: string) => {
   // prettier-ignore
   const num_steps =
@@ -68,7 +67,6 @@ const t2i = async (ai: Ai, model: ImageModels, prompt: string) => {
 		model === '@cf/lykon/dreamshaper-8-lcm' ? 8 :
 		20
   return await ai.run(model, { prompt, num_steps }, { 'cf-cache-ttl': 60, 'cf-skip-cache': true })
-  //return await ai.run(model, { prompt, num_steps })
 }
 
 const app = new DiscordHono<Env>()
