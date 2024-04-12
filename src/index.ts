@@ -9,9 +9,9 @@ type ImageModels = ModelMappings['text-to-image']['models'][number]
 
 type Env = {
   Bindings: {
+    //AI: Cfai
     Endpoint: string
     Token: string
-    //AI: Cfai
   }
 }
 
