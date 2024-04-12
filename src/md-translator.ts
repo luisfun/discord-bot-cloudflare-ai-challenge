@@ -9,7 +9,7 @@ type CacheHeaders = {
   'cf-cache-ttl'?: number
 }
 
-export class MDTranslator {
+class MDTranslator {
   protected ai: Ai | Gateway
   constructor(ai: Ai | Gateway) {
     this.ai = ai
@@ -22,33 +22,33 @@ export class MDTranslator {
 
   async run(model: TranslationModels, inputs: TranslationInputs, headers?: HeadersInit | CacheHeaders) {
     const { source_lang, target_lang } = inputs
-    const trans = (text: string) => this.trans(model, { text, source_lang, target_lang }, headers)
-    const codeBlockArray = inputs.text.split('```')
-    const tCodeBlockArray = await Promise.all(
-      codeBlockArray.map(async (codeBlock, i) => {
-        // this is code block
-        if (i % 2 !== 0) return codeBlock
-        // not code block
-        const paragraphArray = codeBlock.split('\n')
-        const tParagraphArray = await Promise.all(
-          paragraphArray.map(async paragraph => {
-            // List
-            if (paragraph.startsWith('- ')) return '- ' + (await trans(paragraph.slice(2)))
-            // Number List
-            const numStr = numberList(paragraph)
-            if (numStr) return numStr + (await trans(paragraph.slice(numStr.length)))
-            // Normal Paragraph
-            return trans(paragraph)
-          }),
-        )
-        return tParagraphArray.join('\n')
-      }),
+    return await mdTranslator(
+      (text: string) => this.trans(model, { text, source_lang, target_lang }, headers),
+      inputs.text,
     )
-    return tCodeBlockArray.join('```')
   }
 }
 
-const numberList = (paragraph: string) => {
-  const match = paragraph.match(/^(\d+\.\s)/)
-  return match ? match[0] : null
-}
+export const mdTranslator = async (translator: (text: string) => Promise<string | undefined>, text: string) =>
+  (
+    await Promise.all(
+      text.split('```').map(async (segment, i) => {
+        // this is code block
+        if (i % 2 === 1) return segment
+        // not code block
+        return (
+          await Promise.all(
+            segment.split('\n').map(async para => {
+              // Bulleted List
+              if (para.startsWith('- ')) return '- ' + (await translator(para.slice(2)))
+              // Numbered List
+              const numPrefix = para.match(/^(\d+\.\s)/)?.[0]
+              if (numPrefix) return numPrefix + (await translator(para.slice(numPrefix.length)))
+              // Normal Paragraph
+              return translator(para)
+            }),
+          )
+        ).join('\n')
+      }),
+    )
+  ).join('```')

@@ -2,7 +2,7 @@ import type { CommandContext } from 'discord-hono'
 import { modelMappings } from '@cloudflare/ai'
 import { DiscordHono, Components, Button } from 'discord-hono'
 import { Gateway } from '@luisfun/workers-ai-gateway'
-import { MDTranslator } from './md-translator'
+import { mdTranslator } from './md-translator'
 type ModelMappings = typeof modelMappings
 
 type TextModels = ModelMappings['text-generation']['models'][number]
@@ -33,15 +33,14 @@ const cfai = async (c: CommandContext<Env>, type: 'text' | 'code' | 'math' | 'im
   let blobs: Blob[] = []
 
   const ai = new Gateway(c.env.Endpoint, c.env.Token, { timeout: 60000 })
-  const mdt = new MDTranslator(ai)
-  const enPrompt = translation ? await m2m(mdt, prompt, locale, 'en') : prompt
+  const enPrompt = translation ? await m2m(ai, prompt, locale, 'en') : prompt
   if (enPrompt) {
     switch (type) {
       case 'text':
       case 'code':
       case 'math':
         const text = (await t2t(ai, model as TextModels, enPrompt)) || ''
-        content += translation ? await m2m(mdt, text, 'en', locale) : text
+        content += translation ? await m2m(ai, text, 'en', locale) : text
         break
       case 'image':
         blobs = await Promise.all([0, 1, 2].map(async () => new Blob([await t2i(ai, model as ImageModels, enPrompt)])))
@@ -57,8 +56,11 @@ const cfai = async (c: CommandContext<Env>, type: 'text' | 'code' | 'math' | 'im
 }
 
 const t2t = async (ai: Gateway, model: TextModels, prompt: string) => (await ai.run(model, { prompt })).outputs.response
-const m2m = (mdt: MDTranslator, text: string, source_lang: string, target_lang: string) =>
-  mdt.run('@cf/meta/m2m100-1.2b', { text, source_lang, target_lang })
+const m2m = (ai: Gateway, text: string, source_lang: string, target_lang: string) =>
+  mdTranslator(
+    async text => (await ai.run('@cf/meta/m2m100-1.2b', { text, source_lang, target_lang })).outputs.translated_text,
+    text,
+  )
 const t2i = async (ai: Gateway, model: ImageModels, prompt: string) => {
   // prettier-ignore
   const num_steps =
