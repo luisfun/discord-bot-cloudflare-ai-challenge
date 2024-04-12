@@ -1,9 +1,7 @@
 import type { CommandContext } from 'discord-hono'
-import { modelMappings } from '@cloudflare/ai'
 import { DiscordHono, Components, Button } from 'discord-hono'
-import { Gateway } from '@luisfun/workers-ai-gateway'
-import { mdTranslator } from './md-translator'
-type ModelMappings = typeof modelMappings
+import type { ModelMappings } from '@luisfun/cloudflare-ai-plugin'
+import { Ai } from '@luisfun/cloudflare-ai-plugin'
 
 type TextModels = ModelMappings['text-generation']['models'][number]
 type ImageModels = ModelMappings['text-to-image']['models'][number]
@@ -32,7 +30,7 @@ const cfai = async (c: CommandContext<Env>, type: 'text' | 'code' | 'math' | 'im
   let content = '```' + prompt + '```\n'
   let blobs: Blob[] = []
 
-  const ai = new Gateway(c.env.Endpoint, c.env.Token, { timeout: 60000 })
+  const ai = new Ai(c.env.Endpoint, c.env.Token)
   const enPrompt = translation ? await m2m(ai, prompt, locale, 'en') : prompt
   if (enPrompt) {
     switch (type) {
@@ -55,19 +53,17 @@ const cfai = async (c: CommandContext<Env>, type: 'text' | 'code' | 'math' | 'im
   } else await c.followup(content + '\n\n⚠️Error: Prompt Translation')
 }
 
-const t2t = async (ai: Gateway, model: TextModels, prompt: string) => (await ai.run(model, { prompt })).outputs.response
-const m2m = (ai: Gateway, text: string, source_lang: string, target_lang: string) =>
-  mdTranslator(
-    async text => (await ai.run('@cf/meta/m2m100-1.2b', { text, source_lang, target_lang })).outputs.translated_text,
-    text,
-  )
-const t2i = async (ai: Gateway, model: ImageModels, prompt: string) => {
+const t2t = async (ai: Ai, model: TextModels, prompt: string) =>
+  ((await ai.run(model, { prompt })) as { response: string }).response
+const m2m = (ai: Ai, text: string, source_lang: string, target_lang: string) =>
+  ai.mdt('@cf/meta/m2m100-1.2b', { text, source_lang, target_lang })
+const t2i = async (ai: Ai, model: ImageModels, prompt: string) => {
   // prettier-ignore
   const num_steps =
 		model === '@cf/bytedance/stable-diffusion-xl-lightning' ? 1 :
 		model === '@cf/lykon/dreamshaper-8-lcm' ? 8 :
 		20
-  return (await ai.run(model, { prompt, num_steps }, { 'cf-cache-ttl': 60, 'cf-skip-cache': true })).outputs
+  return await ai.run(model, { prompt, num_steps }, { 'cf-cache-ttl': 60, 'cf-skip-cache': true })
 }
 
 const app = new DiscordHono<Env>()
