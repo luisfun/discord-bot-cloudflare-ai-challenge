@@ -30,7 +30,7 @@
     "wrangler": "^3.50.0"
   },
   "dependencies": {
-    "@luisfun/cloudflare-ai-plugin": "^0.0.5",
+    "@luisfun/cloudflare-ai-plugin": "^0.1.0",
     "discord-hono": "^0.5.2"
   }
 }
