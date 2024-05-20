@@ -1,20 +1,23 @@
-import dotenv from 'dotenv'
-import process from 'node:process'
+import { env } from 'node:process'
 import { modelMappings } from '@cloudflare/ai'
-import { Command, Option, BooleanOption, register } from 'discord-hono'
-dotenv.config({ path: '.dev.vars' })
+import { BooleanOption, Command, Option, register } from 'discord-hono'
+import { config } from 'dotenv'
+config({ path: '.dev.vars' })
 
-const codeModels = [
-  '@hf/thebloke/deepseek-coder-6.7b-base-awq',
-  '@hf/thebloke/deepseek-coder-6.7b-instruct-awq',
-  '@hf/thebloke/codellama-7b-instruct-awq',
-  '@cf/defog/sqlcoder-7b-2',
+const noCatalogModels = [
+  '@cf/mistral/mixtral-8x7b-instruct-v0.1-awq',
+  '@cf/deepseek-ai/deepseek-coder-7b-instruct-v1.5',
+  '@cf/nexaaidev/octopus-v2',
+  '@cf/m-a-p/opencodeinterpreter-ds-6.7b',
+  '@cf/fblgit/una-cybertron-7b-v2-bf16',
+  '@cf/sven/test',
 ]
-const mathModels = ['@cf/deepseek-ai/deepseek-math-7b-base', '@cf/deepseek-ai/deepseek-math-7b-instruct']
-
-const textModels = modelMappings['text-generation'].models.filter(
-  m => !codeModels.includes(m) && !mathModels.includes(m),
+const baseTextModels = modelMappings['text-generation'].models.filter(
+  m => !m.includes('-lora') && !m.includes('-base') && !noCatalogModels.includes(m),
 )
+const codeModels = baseTextModels.filter(m => m.includes('code'))
+const mathModels = baseTextModels.filter(m => m.includes('math'))
+const textModels = baseTextModels.filter(m => !codeModels.includes(m) && !mathModels.includes(m))
 const imageModels = modelMappings['text-to-image'].models.filter(
   m => !m.includes('-img2img') && !m.includes('-inpainting'),
 )
@@ -36,7 +39,7 @@ const commands = [
 
 await register(
   commands,
-  process.env.DISCORD_APPLICATION_ID,
-  process.env.DISCORD_TOKEN,
-  //process.env.DISCORD_TEST_GUILD_ID,
+  env.DISCORD_APPLICATION_ID,
+  env.DISCORD_TOKEN,
+  //env.DISCORD_TEST_GUILD_ID,
 )
