@@ -72,8 +72,6 @@ const t2i = async (ai: Ai, model: ImageModels, prompt: string) => {
   return await ai.run(model, { prompt, num_steps }, { 'cf-cache-ttl': 60, 'cf-skip-cache': true })
 }
 
-const app = new DiscordHono<Env>()
+export default new DiscordHono<Env>()
   .command('', c => c.resDefer(c => cfai(c, c.key)))
   .component('delete-self', c => c.resDeferUpdate(c.followupDelete))
-
-export default app
