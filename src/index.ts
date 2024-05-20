@@ -66,9 +66,9 @@ const m2m = async (ai: Ai, text: string, source_lang: string, target_lang: strin
 const t2i = async (ai: Ai, model: ImageModels, prompt: string) => {
   // biome-ignore format: ternary operator
   const num_steps =
-		model === '@cf/bytedance/stable-diffusion-xl-lightning' ? 1 :
-		model === '@cf/lykon/dreamshaper-8-lcm' ? 8 :
-		20
+    (model === '@cf/bytedance/stable-diffusion-xl-lightning' || model === '@cf/stabilityai/stable-diffusion-xl-turbo') ? 1 :
+    model === '@cf/lykon/dreamshaper-8-lcm' ? 8 :
+    20
   return await ai.run(model, { prompt, num_steps }, { 'cf-cache-ttl': 60, 'cf-skip-cache': true })
 }
 
