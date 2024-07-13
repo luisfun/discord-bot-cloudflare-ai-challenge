@@ -1,6 +1,6 @@
 # Discord Bot with Cloudflare AI
 
-~~[👉 Demo](https://discord.com/oauth2/authorize?client_id=1227951760539258880&permissions=0&scope=bot)~~
+~~👉 Demo~~
 
 ## Fork, Clone, Install, Dev
 
